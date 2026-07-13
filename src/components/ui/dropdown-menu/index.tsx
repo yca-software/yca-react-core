@@ -4,9 +4,9 @@ import type * as React from 'react';
 import { surfaceOverlay } from '../../../lib/surfaces';
 import { cn } from '../../../lib/utils';
 
-/** About 5-6 options visible, then scroll; still shrinks when the viewport is short. */
+/** About 6-7 options visible, then scroll; still shrinks when the viewport is short. */
 export const dropdownMenuSelectOptionsMaxHeightClassName =
-  'max-h-[min(var(--radix-dropdown-menu-content-available-height),13rem)]';
+  'max-h-[min(var(--radix-dropdown-menu-content-available-height),17rem)]';
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;

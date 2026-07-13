@@ -113,7 +113,7 @@ function Select({
         <DropdownScrollableList
           grow={false}
           scrollAreaClassName={cn(
-            'overflow-y-auto overscroll-y-contain p-1',
+            'overflow-y-auto overscroll-y-contain p-1 pb-6',
             dropdownMenuSelectOptionsMaxHeightClassName,
           )}
           scrollKey={`${filteredOptions.length}-${open ? 1 : 0}-${search}`}
