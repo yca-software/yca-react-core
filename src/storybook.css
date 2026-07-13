@@ -1,0 +1,8 @@
+/**
+ * Storybook-only CSS: Tailwind, source paths, and theme for docs.
+ */
+@import "tailwindcss";
+@import "./theme/tokens.css";
+
+@source "../.storybook/**/*.{js,ts,jsx,tsx}";
+@source "./**/*.{js,ts,jsx,tsx}";

@@ -1,0 +1,9 @@
+/**
+ * Canonical theme + optional marketing utilities for consumers.
+ *
+ * Import Tailwind in your app (`@import "tailwindcss";`), then:
+ * `@import "@yca-software/yca-react-core/styles.css";`
+ */
+
+@import "./theme/tokens.css";
+@import "./theme/marketing.css";
