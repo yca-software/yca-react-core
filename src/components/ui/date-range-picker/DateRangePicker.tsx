@@ -307,6 +307,7 @@ export function DateRangePicker({
         )}
         align="start"
         sideOffset={8}
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col sm:flex-row">
           <DateRangePickerPresetList
