@@ -5,7 +5,7 @@ import type { DateRange } from 'react-day-picker';
 import { surfaceOverlay } from '../../../lib/surfaces';
 import { cn } from '../../../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { Popover, PopoverAnchor, PopoverContent } from '../popover';
 import { DEFAULT_PRESET_IDS, DEFAULT_PRESET_LABELS, DEFAULT_TRANSLATIONS } from './constants';
 import { DateRangePickerActionFooter } from './DateRangePickerActionFooter';
 import { DateRangePickerFieldsCalendar } from './DateRangePickerFieldsCalendar';
@@ -297,10 +297,10 @@ export function DateRangePicker({
   }
 
   return (
-    // Non-modal: trigger is an editable input that keeps focus. Modal focus-trap
-    // + preventDefault(onOpenAutoFocus) dismisses the popover on open (same as DatePicker).
+    // Non-modal + Anchor (not Trigger): editable input keeps focus; Trigger's
+    // click-toggle raced controlled setOpen(true) and closed the popover immediately.
     <Popover modal={false} open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
+      <PopoverAnchor asChild>{trigger}</PopoverAnchor>
       <PopoverContent
         className={cn(
           surfaceOverlay,

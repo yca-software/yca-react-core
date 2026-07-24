@@ -25,10 +25,19 @@ describe('DateRangePicker', () => {
     );
   });
 
-  it('opens and keeps the popover visible after clicking the trigger', () => {
+  it('opens and keeps the popover visible after clicking the textbox', () => {
     render(<DateRangePicker value={undefined} onChange={() => {}} />);
 
     fireEvent.click(screen.getByRole('textbox', { name: /date range/i }));
+
+    expect(screen.getByText('Quick ranges')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /last 7 days/i })).toBeInTheDocument();
+  });
+
+  it('opens and keeps the popover visible after clicking the calendar icon area', () => {
+    render(<DateRangePicker value={undefined} onChange={() => {}} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /date range/i }));
 
     expect(screen.getByText('Quick ranges')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /last 7 days/i })).toBeInTheDocument();

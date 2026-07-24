@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.5 — 2026-07-24
+
+### Fixed
+
+- **DateRangePicker** — use `PopoverAnchor` instead of `PopoverTrigger` so controlled open is not toggled closed on click (editable trigger + icon).
+
 ## 0.0.4 — 2026-07-24
 
 ### Fixed

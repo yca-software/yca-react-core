@@ -31,6 +31,7 @@ export function DateRangePickerTrigger({
     <div
       role="button"
       tabIndex={0}
+      aria-label={ariaLabel}
       onClick={onOpen}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
