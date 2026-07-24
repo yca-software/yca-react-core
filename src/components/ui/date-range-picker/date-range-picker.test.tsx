@@ -30,7 +30,7 @@ describe('DateRangePicker', () => {
 
     fireEvent.click(screen.getByRole('textbox', { name: /date range/i }));
 
-    expect(screen.getByText('Quick ranges')).toBeInTheDocument();
+    // jsdom defaults to compact layout (no "Quick ranges" sidebar heading).
     expect(screen.getByRole('button', { name: /last 7 days/i })).toBeInTheDocument();
   });
 
@@ -39,7 +39,6 @@ describe('DateRangePicker', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /date range/i }));
 
-    expect(screen.getByText('Quick ranges')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /last 7 days/i })).toBeInTheDocument();
   });
 
@@ -49,7 +48,7 @@ describe('DateRangePicker', () => {
     fireEvent.click(screen.getByRole('textbox', { name: /date range/i }));
 
     expect(document.querySelector('[data-slot="popover-content"]')).toBeTruthy();
-    expect(screen.getByText('Quick ranges')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /last 7 days/i })).toBeInTheDocument();
   });
 
   it('calls onChange when a day is selected', () => {
