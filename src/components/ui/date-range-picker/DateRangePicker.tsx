@@ -297,7 +297,9 @@ export function DateRangePicker({
   }
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
+    // Non-modal: trigger is an editable input that keeps focus. Modal focus-trap
+    // + preventDefault(onOpenAutoFocus) dismisses the popover on open (same as DatePicker).
+    <Popover modal={false} open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         className={cn(

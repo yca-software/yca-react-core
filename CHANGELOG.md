@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.4 — 2026-07-24
+
+### Fixed
+
+- **DateRangePicker** — popover uses `modal={false}` (match `DatePicker`) so clicking the editable trigger opens and stays open instead of dismissing under the modal focus trap; input click no longer races `PopoverTrigger` toggle.
+
 ## 0.0.1 — 2026-07-13
 
 ### Changed

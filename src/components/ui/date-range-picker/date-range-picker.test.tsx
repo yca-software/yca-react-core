@@ -25,6 +25,15 @@ describe('DateRangePicker', () => {
     );
   });
 
+  it('opens and keeps the popover visible after clicking the trigger', () => {
+    render(<DateRangePicker value={undefined} onChange={() => {}} />);
+
+    fireEvent.click(screen.getByRole('textbox', { name: /date range/i }));
+
+    expect(screen.getByText('Quick ranges')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /last 7 days/i })).toBeInTheDocument();
+  });
+
   it('calls onChange when a day is selected', () => {
     const handleChange = vi.fn();
 

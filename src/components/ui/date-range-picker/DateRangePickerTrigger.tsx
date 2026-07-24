@@ -53,7 +53,11 @@ export function DateRangePickerTrigger({
         onChange={(e) => onInputChange(e.target.value)}
         onFocus={onInputFocus}
         onBlur={onInputBlur}
-        onClick={onOpen}
+        onClick={(e) => {
+          // Avoid PopoverTrigger toggle racing with controlled setOpen(true).
+          e.stopPropagation();
+          onOpen();
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             (e.target as HTMLInputElement).blur();
