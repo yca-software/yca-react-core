@@ -20,6 +20,9 @@ function PopoverContent({
   className,
   align = 'start',
   sideOffset = 4,
+  collisionPadding = 16,
+  sticky = 'always',
+  avoidCollisions = true,
   ...props
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
@@ -28,6 +31,9 @@ function PopoverContent({
         data-slot="popover-content"
         align={align}
         sideOffset={sideOffset}
+        collisionPadding={collisionPadding}
+        sticky={sticky}
+        avoidCollisions={avoidCollisions}
         className={cn(
           surfaceOverlay,
           'z-110 w-auto min-w-48 p-3 outline-none',

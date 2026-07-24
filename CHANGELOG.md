@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.7 — 2026-07-24
+
+### Fixed
+
+- **Popover / DateRangePicker** — keep overlays inside the viewport (`avoidCollisions`, `collisionPadding={16}`, `sticky="always"`). Wide date-range panels no longer clip off the left edge when the trigger sits near the screen edge.
+
 ## 0.0.6 — 2026-07-24
 
 ### Fixed

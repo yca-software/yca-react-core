@@ -310,9 +310,11 @@ export function DateRangePicker({
         align="start"
         side="bottom"
         sideOffset={8}
-        // Prefer below the field; collision flip inside overflow shells parks the
-        // panel at translate(0, -200%) (invisible) in Aura's clipped layout.
-        avoidCollisions={false}
+        // Keep the wide panel inside the viewport (shift/flip). Portal + real
+        // trigger ref avoid the old overflow-shell translate(0,-200%) park.
+        avoidCollisions
+        collisionPadding={16}
+        sticky="always"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col sm:flex-row">
