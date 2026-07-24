@@ -43,6 +43,15 @@ describe('DateRangePicker', () => {
     expect(screen.getByRole('button', { name: /last 7 days/i })).toBeInTheDocument();
   });
 
+  it('keeps popover content mounted after open (positioning needs a real layout engine)', () => {
+    render(<DateRangePicker value={undefined} onChange={() => {}} />);
+
+    fireEvent.click(screen.getByRole('textbox', { name: /date range/i }));
+
+    expect(document.querySelector('[data-slot="popover-content"]')).toBeTruthy();
+    expect(screen.getByText('Quick ranges')).toBeInTheDocument();
+  });
+
   it('calls onChange when a day is selected', () => {
     const handleChange = vi.fn();
 

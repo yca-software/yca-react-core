@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.6 — 2026-07-24
+
+### Fixed
+
+- **DateRangePicker** — restore `PopoverTrigger` with `forwardRef` on the trigger so Popper has a real anchor; set `side="bottom"` and `avoidCollisions={false}` so overflow shells cannot flip the panel to `translate(0, -200%)` off-screen. Keep `modal={false}`.
+
 ## 0.0.5 — 2026-07-24
 
 ### Fixed

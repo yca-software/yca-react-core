@@ -5,7 +5,7 @@ import type { DateRange } from 'react-day-picker';
 import { surfaceOverlay } from '../../../lib/surfaces';
 import { cn } from '../../../lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../dialog';
-import { Popover, PopoverAnchor, PopoverContent } from '../popover';
+import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { DEFAULT_PRESET_IDS, DEFAULT_PRESET_LABELS, DEFAULT_TRANSLATIONS } from './constants';
 import { DateRangePickerActionFooter } from './DateRangePickerActionFooter';
 import { DateRangePickerFieldsCalendar } from './DateRangePickerFieldsCalendar';
@@ -297,10 +297,10 @@ export function DateRangePicker({
   }
 
   return (
-    // Non-modal + Anchor (not Trigger): editable input keeps focus; Trigger's
-    // click-toggle raced controlled setOpen(true) and closed the popover immediately.
+    // Non-modal (editable input keeps focus). PopoverTrigger anchors Popper —
+    // Anchor-without-forwardRef parked content at translate(0,-200%) off-screen.
     <Popover modal={false} open={open} onOpenChange={handleOpenChange}>
-      <PopoverAnchor asChild>{trigger}</PopoverAnchor>
+      <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         className={cn(
           surfaceOverlay,
@@ -308,7 +308,11 @@ export function DateRangePicker({
           calendarMonths === 2 && 'min-w-[36rem]',
         )}
         align="start"
+        side="bottom"
         sideOffset={8}
+        // Prefer below the field; collision flip inside overflow shells parks the
+        // panel at translate(0, -200%) (invisible) in Aura's clipped layout.
+        avoidCollisions={false}
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <div className="flex flex-col sm:flex-row">
