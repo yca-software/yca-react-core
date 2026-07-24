@@ -71,4 +71,30 @@ describe('DateRangePicker', () => {
 
     expect(handleChange).toHaveBeenCalled();
   });
+
+  it('applies a single clicked day as a same-day range', () => {
+    const handleChange = vi.fn();
+    const handleApply = vi.fn();
+
+    render(<DateRangePicker value={undefined} onChange={handleChange} onApply={handleApply} />);
+
+    fireEvent.click(screen.getByRole('textbox', { name: /date range/i }));
+
+    const dayButton = screen
+      .getAllByRole('button')
+      .find((btn) => btn.textContent && /^\d+$/.test(btn.textContent));
+
+    expect(dayButton).toBeDefined();
+    if (!dayButton) return;
+
+    fireEvent.click(dayButton);
+    fireEvent.click(screen.getByRole('button', { name: /apply/i }));
+
+    expect(handleApply).toHaveBeenCalledTimes(1);
+    const applied = handleApply.mock.calls[0]?.[0] as DateRange | undefined;
+    expect(applied?.from).toBeInstanceOf(Date);
+    expect(applied?.to).toBeInstanceOf(Date);
+    expect(applied?.from?.getTime()).toBe(applied?.to?.getTime());
+    expect(handleChange).toHaveBeenLastCalledWith(applied);
+  });
 });

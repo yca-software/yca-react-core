@@ -11,6 +11,13 @@ export function rangesMatch(a: DateRange | undefined, b: DateRange): boolean {
   return af === bf && at === bt;
 }
 
+/** If only a start day is set, treat it as a single-day range on apply. */
+export function completeDateRange(range: DateRange | undefined): DateRange | undefined {
+  if (!range?.from) return range;
+  if (range.to) return range;
+  return { from: range.from, to: range.from };
+}
+
 export function parseDate(part: string): Date | null {
   const p = part.trim();
   if (!p) return null;

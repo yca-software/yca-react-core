@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseDate, parseInputToRange, rangesMatch } from './parseDateRange';
+import { completeDateRange, parseDate, parseInputToRange, rangesMatch } from './parseDateRange';
 import { getPresetRange } from './useDateRangePresets';
 
 describe('date range parse helpers', () => {
@@ -20,6 +20,22 @@ describe('date range parse helpers', () => {
     const from = new Date(2026, 0, 9);
     const to = new Date(2026, 0, 24);
     expect(rangesMatch({ from, to }, { from: new Date(from), to: new Date(to) })).toBe(true);
+  });
+
+  it('completes a from-only draft to a single-day range', () => {
+    const from = new Date(2026, 6, 24);
+    expect(completeDateRange({ from, to: undefined })).toEqual({ from, to: from });
+  });
+
+  it('leaves a full range and empty draft unchanged', () => {
+    const from = new Date(2026, 0, 9);
+    const to = new Date(2026, 0, 24);
+    expect(completeDateRange({ from, to })).toEqual({ from, to });
+    expect(completeDateRange(undefined)).toBeUndefined();
+    expect(completeDateRange({ from: undefined, to: undefined })).toEqual({
+      from: undefined,
+      to: undefined,
+    });
   });
 });
 

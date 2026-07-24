@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.9 — 2026-07-24
+
+### Fixed
+
+- **DateRangePicker** — Apply with only one day selected treats that day as a single-day range (`from === to`) instead of requiring a second click.
+
 ## 0.0.8 — 2026-07-24
 
 ### Fixed

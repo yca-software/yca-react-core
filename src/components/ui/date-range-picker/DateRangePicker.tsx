@@ -12,6 +12,7 @@ import { DateRangePickerFieldsCalendar } from './DateRangePickerFieldsCalendar';
 import { DateRangePickerPresetList } from './DateRangePickerPresetList';
 import { DateRangePickerTrigger } from './DateRangePickerTrigger';
 import {
+  completeDateRange,
   DISPLAY_FORMAT,
   formatRangeLabel,
   INPUT_FORMAT,
@@ -147,8 +148,10 @@ export function DateRangePicker({
 
   const handleApply = () => {
     if (useApplyFlow) {
-      onChange(draft);
-      onApply?.(draft);
+      const completed = completeDateRange(draft);
+      setDraft(completed);
+      onChange(completed);
+      onApply?.(completed);
     }
     setOpen(false);
   };
