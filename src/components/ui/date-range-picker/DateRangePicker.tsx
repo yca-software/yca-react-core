@@ -305,7 +305,6 @@ export function DateRangePicker({
         className={cn(
           surfaceOverlay,
           'w-auto max-w-[min(calc(100vw-1.5rem),52rem)] overflow-hidden p-0',
-          calendarMonths === 2 && 'min-w-[36rem]',
         )}
         align="start"
         side="bottom"
@@ -317,12 +316,12 @@ export function DateRangePicker({
         sticky="always"
         onOpenAutoFocus={(e) => e.preventDefault()}
       >
-        <div className="flex flex-col sm:flex-row">
+        <div className={cn('flex', isWideLayout ? 'flex-row' : 'flex-col')}>
           <DateRangePickerPresetList
             presets={presetList}
             draft={draft}
-            layout="sidebar"
-            presetsHeading={t.presetsHeading}
+            layout={isWideLayout ? 'sidebar' : 'mobile-row'}
+            presetsHeading={isWideLayout ? t.presetsHeading : undefined}
             onPreset={handlePreset}
           />
           <div className="flex min-w-0 flex-1 flex-col bg-background">

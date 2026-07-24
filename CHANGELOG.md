@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.8 — 2026-07-24
+
+### Fixed
+
+- **DateRangePicker** — mid widths (~640–1023px, e.g. ~780px) use a compact popover (one month + horizontal preset chips) instead of forcing a sidebar and two-month `min-w-[36rem]` panel that overflowed and looked broken.
+
 ## 0.0.7 — 2026-07-24
 
 ### Fixed

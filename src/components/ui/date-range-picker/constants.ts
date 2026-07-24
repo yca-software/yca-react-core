@@ -4,8 +4,11 @@ import type { DateRangePickerTranslations, DefaultPresetId } from './types';
 export const DATE_RANGE_MOBILE_MAX_PX = 640;
 export const DATE_RANGE_MOBILE_MQ = `(max-width: ${DATE_RANGE_MOBILE_MAX_PX - 1}px)`;
 
-/** Desktop popover shows two months side-by-side from this width up. */
-export const DATE_RANGE_WIDE_MIN_PX = 768;
+/**
+ * Two months + preset sidebar need ~900px+; below that mid widths (e.g. ~780px)
+ * use a compact popover: one month and horizontal preset chips.
+ */
+export const DATE_RANGE_WIDE_MIN_PX = 1024;
 export const DATE_RANGE_WIDE_MQ = `(min-width: ${DATE_RANGE_WIDE_MIN_PX}px)`;
 
 export const DEFAULT_PRESET_IDS: { id: DefaultPresetId }[] = [
