@@ -3,3 +3,4 @@ export * from './createApiProvider';
 export * from './request';
 export * from './responseHandler';
 export * from './types';
+export * from './useAccessTokenKeepAlive';

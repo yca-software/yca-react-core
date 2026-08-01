@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.12 — 2026-08-01
+
+### Added
+
+- **`useAccessTokenKeepAlive`** (`/api`) — interval + visibility/focus refresh when the access JWT is missing or near expiry. Apps pass `enabled` + `getAccessToken`.
+
 ## 0.0.11 — 2026-08-01
 
 ### Fixed
