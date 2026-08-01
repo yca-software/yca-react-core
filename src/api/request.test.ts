@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createDefaultRefreshRequest, performAccessTokenRefresh } from './request';
+import {
+  createDefaultRefreshRequest,
+  executeConfiguredRefresh,
+  performAccessTokenRefresh,
+} from './request';
 
 describe('performAccessTokenRefresh', () => {
   it('stores and returns access token on success', async () => {
@@ -117,6 +121,67 @@ describe('performAccessTokenRefresh', () => {
     });
 
     expect(fetchSpy).toHaveBeenCalledWith('http://test/api/v1/session/renew', expect.any(Object));
+    vi.unstubAllGlobals();
+  });
+
+  it('does not call onFailure on 429 (rate limit)', async () => {
+    const onFailure = vi.fn();
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(
+          new Response(JSON.stringify({ errorCode: 'TooManyRequests' }), { status: 429 }),
+        ),
+    );
+
+    await expect(
+      performAccessTokenRefresh({
+        baseURL: 'http://test/api/v1',
+        getRefreshToken: () => 'refresh',
+        request: createDefaultRefreshRequest(),
+        useCookieCredentials: false,
+        setAccessToken: vi.fn(),
+        onFailure,
+      }),
+    ).rejects.toMatchObject({ status: 429 });
+
+    expect(onFailure).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+});
+
+describe('executeConfiguredRefresh', () => {
+  it('dedupes concurrent refresh calls into one HTTP request', async () => {
+    let resolveFetch!: (value: Response) => void;
+    const fetchSpy = vi.fn().mockImplementation(
+      () =>
+        new Promise<Response>((resolve) => {
+          resolveFetch = resolve;
+        }),
+    );
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const setAccessToken = vi.fn();
+    const config = {
+      baseURL: 'http://test/api/v1',
+      getAccessToken: () => null,
+      getRefreshToken: () => 'refresh',
+      refresh: {
+        request: createDefaultRefreshRequest(),
+        cookieCredentialsEnabled: () => false,
+        setAccessToken,
+        onFailure: vi.fn(),
+      },
+    };
+
+    const p1 = executeConfiguredRefresh(config);
+    const p2 = executeConfiguredRefresh(config);
+    expect(fetchSpy).toHaveBeenCalledOnce();
+
+    resolveFetch(new Response(JSON.stringify({ accessToken: 'shared' }), { status: 200 }));
+    await expect(Promise.all([p1, p2])).resolves.toEqual(['shared', 'shared']);
+    expect(setAccessToken).toHaveBeenCalledOnce();
     vi.unstubAllGlobals();
   });
 });

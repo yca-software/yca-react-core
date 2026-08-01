@@ -78,6 +78,11 @@ export function getRequestOptions(
   return init;
 }
 
+/** Transient refresh failures must not clear the session (SPA onRefreshFailure). */
+function isTransientRefreshStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
 export async function performAccessTokenRefresh(params: {
   baseURL: string;
   getRefreshToken: () => string | null;
@@ -123,13 +128,22 @@ export async function performAccessTokenRefresh(params: {
 
   const accessToken = params.request.parseAccessToken(data);
   if (!response.ok || !accessToken) {
-    params.onFailure();
-    throw { error: new Error('failed to refresh access token'), status: 401 };
+    // Rate limits / upstream blips: keep the session so the next navigation can retry.
+    if (!isTransientRefreshStatus(response.status)) {
+      params.onFailure();
+    }
+    throw {
+      error: new Error('failed to refresh access token'),
+      status: response.status || 401,
+    };
   }
 
   params.setAccessToken(accessToken);
   return accessToken;
 }
+
+/** One in-flight refresh per page — parallel 401 retries share the same promise. */
+let refreshInFlight: Promise<string> | null = null;
 
 export async function executeConfiguredRefresh(config: ApiClientConfig): Promise<string> {
   const refresh = config.refresh;
@@ -137,18 +151,23 @@ export async function executeConfiguredRefresh(config: ApiClientConfig): Promise
     throw new Error('refresh is not configured');
   }
 
-  refresh.onStart?.();
-  try {
-    return await performAccessTokenRefresh({
-      baseURL: config.baseURL,
-      getRefreshToken: config.getRefreshToken,
-      request: refresh.request,
-      useCookieCredentials: refresh.cookieCredentialsEnabled(),
-      setAccessToken: refresh.setAccessToken,
-      onFailure: refresh.onFailure,
-      acceptLanguage: config.getAcceptLanguage?.(),
-    });
-  } finally {
-    refresh.onEnd?.();
+  if (refreshInFlight) {
+    return refreshInFlight;
   }
+
+  refresh.onStart?.();
+  refreshInFlight = performAccessTokenRefresh({
+    baseURL: config.baseURL,
+    getRefreshToken: config.getRefreshToken,
+    request: refresh.request,
+    useCookieCredentials: refresh.cookieCredentialsEnabled(),
+    setAccessToken: refresh.setAccessToken,
+    onFailure: refresh.onFailure,
+    acceptLanguage: config.getAcceptLanguage?.(),
+  }).finally(() => {
+    refreshInFlight = null;
+    refresh.onEnd?.();
+  });
+
+  return refreshInFlight;
 }
