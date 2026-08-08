@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.14 — 2026-08-08
+
+### Fixed
+
+- **DateRangePicker trigger** — use `h-9` (same as `Input` / `MultiSelect` / `DatePicker`) so toolbar filters align.
+
 ## 0.0.12 — 2026-08-01
 
 ### Added

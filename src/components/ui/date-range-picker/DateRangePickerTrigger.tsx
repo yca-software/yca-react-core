@@ -52,7 +52,7 @@ export const DateRangePickerTrigger = React.forwardRef<HTMLDivElement, DateRange
           className,
         )}
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center border-r border-border/40 bg-muted/25 text-muted-foreground">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center border-r border-border/40 bg-muted/25 text-muted-foreground">
           <CalendarIcon className="size-4" aria-hidden="true" />
         </span>
         <Input
@@ -78,7 +78,7 @@ export const DateRangePickerTrigger = React.forwardRef<HTMLDivElement, DateRange
           placeholder={effectivePlaceholder}
           data-empty={isEmpty || undefined}
           className={cn(
-            'h-10 min-w-0 flex-1 cursor-pointer rounded-none border-0 bg-transparent py-2 pl-3 pr-3 text-sm shadow-none focus-visible:ring-0 whitespace-nowrap',
+            'h-9 min-w-0 flex-1 cursor-pointer rounded-none border-0 bg-transparent py-2 pl-3 pr-3 text-sm shadow-none focus-visible:ring-0 whitespace-nowrap',
             isEmpty && 'text-muted-foreground',
           )}
           title={!isEmpty ? inputText : undefined}

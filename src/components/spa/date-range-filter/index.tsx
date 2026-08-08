@@ -54,8 +54,8 @@ export function DateRangeFilter({
 
   if (toolbar) {
     return (
-      <div className={cn('min-w-0 w-full', className)}>
-        <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
+      <div className={cn('flex min-w-0 w-full flex-col gap-1', className)}>
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
         {picker}
       </div>
     );
@@ -63,10 +63,10 @@ export function DateRangeFilter({
 
   if (inline) {
     return (
-      <div className={cn('w-full shrink-0 sm:w-auto', className)}>
-        <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
+      <div className={cn('flex w-full shrink-0 flex-col gap-1 sm:w-auto', className)}>
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
         {picker}
-        {hint ? <p className="mt-1 text-[0.65rem] text-muted-foreground">{hint}</p> : null}
+        {hint ? <p className="text-[0.65rem] text-muted-foreground">{hint}</p> : null}
       </div>
     );
   }
