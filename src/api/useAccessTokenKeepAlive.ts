@@ -64,11 +64,13 @@ export function useAccessTokenKeepAlive(options: UseAccessTokenKeepAliveOptions)
     refreshIfNeeded();
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('focus', refreshIfNeeded);
+    window.addEventListener('pageshow', refreshIfNeeded);
     const id = window.setInterval(refreshIfNeeded, KEEP_ALIVE_INTERVAL_MS);
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('focus', refreshIfNeeded);
+      window.removeEventListener('pageshow', refreshIfNeeded);
       window.clearInterval(id);
     };
   }, [apiConfig, enabled, getAccessToken]);

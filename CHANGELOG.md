@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.0.15 — 2026-08-14
+
+### Fixed
+
+- **Access token refresh** — network errors, aborted fetches, and invalid JSON no longer call `onFailure` (which logs the SPA out). Only HTTP 400/401/403/404 clear the session. `pageshow` also triggers keep-alive after iOS restores a frozen tab.
+- **Access cookie** — `setAccessTokenCookie` sets `expires` from the JWT `exp` instead of a session cookie that iOS Safari drops when switching apps.
+- **Select search** — Turkish letter folding so queries like `hektas` match `Hektaş`.
+
 ## 0.0.14 — 2026-08-08
 
 ### Fixed

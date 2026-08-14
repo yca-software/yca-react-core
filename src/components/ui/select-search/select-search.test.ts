@@ -15,6 +15,12 @@ describe('filterSelectOptions', () => {
   it('filters case-insensitively by label', () => {
     expect(filterSelectOptions(options, 'beta')).toEqual([options[1]]);
   });
+
+  it('matches ASCII queries against Turkish letters (Hektaş)', () => {
+    const stocks = [{ value: '1', label: 'HEKTS — Hektaş' }];
+    expect(filterSelectOptions(stocks, 'hektas')).toEqual(stocks);
+    expect(filterSelectOptions(stocks, 'HEKTS')).toEqual(stocks);
+  });
 });
 
 describe('isSelectSearchable', () => {

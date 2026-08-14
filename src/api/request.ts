@@ -78,9 +78,9 @@ export function getRequestOptions(
   return init;
 }
 
-/** Transient refresh failures must not clear the session (SPA onRefreshFailure). */
-function isTransientRefreshStatus(status: number): boolean {
-  return status === 429 || status >= 500;
+/** Auth errors where the refresh cookie/token is actually unusable. */
+export function isFatalRefreshFailureStatus(status: number): boolean {
+  return status === 400 || status === 401 || status === 403 || status === 404;
 }
 
 export async function performAccessTokenRefresh(params: {
@@ -110,10 +110,17 @@ export async function performAccessTokenRefresh(params: {
     credentials: params.useCookieCredentials ? 'include' : params.request.credentials,
   };
 
-  const response = await fetch(
-    buildRequestUrl(params.baseURL, requestConfig.endpoint),
-    getRequestOptions(requestConfig, null, params.acceptLanguage),
-  );
+  let response: Response;
+  try {
+    response = await fetch(
+      buildRequestUrl(params.baseURL, requestConfig.endpoint),
+      getRequestOptions(requestConfig, null, params.acceptLanguage),
+    );
+  } catch {
+    // Radio sleep / aborted fetch after backgrounding — retry, do not log out.
+    throw { error: new Error('refresh network error'), status: 0 };
+  }
+
   const responseText = await response.text();
 
   let data: unknown = null;
@@ -121,20 +128,20 @@ export async function performAccessTokenRefresh(params: {
     try {
       data = JSON.parse(responseText);
     } catch {
-      params.onFailure();
-      throw { error: new Error('invalid refresh response'), status: 401 };
+      throw { error: new Error('invalid refresh response'), status: 0 };
     }
   }
 
   const accessToken = params.request.parseAccessToken(data);
   if (!response.ok || !accessToken) {
-    // Rate limits / upstream blips: keep the session so the next navigation can retry.
-    if (!isTransientRefreshStatus(response.status)) {
+    const status = response.status || 0;
+    // Rate limits / upstream blips / missing body: keep the session so resume can retry.
+    if (isFatalRefreshFailureStatus(status)) {
       params.onFailure();
     }
     throw {
       error: new Error('failed to refresh access token'),
-      status: response.status || 401,
+      status,
     };
   }
 

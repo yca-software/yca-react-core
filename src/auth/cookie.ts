@@ -1,4 +1,5 @@
 import Cookies from 'js-cookie';
+import { jwtDecode } from 'jwt-decode';
 import type { CookieNames } from '../constants/cookies';
 
 export interface CookieConsent {
@@ -20,6 +21,19 @@ const tokenCookieOptions = (options: TokenCookieOptions): Cookies.CookieAttribut
   if (options.sameSite) opts.sameSite = options.sameSite;
   return opts;
 };
+
+/** Prefer a dated cookie over a session cookie — iOS drops session cookies when backgrounded. */
+function accessTokenCookieExpires(token: string): Date {
+  try {
+    const { exp } = jwtDecode<{ exp?: number }>(token);
+    if (typeof exp === 'number' && exp * 1000 > Date.now()) {
+      return new Date(exp * 1000);
+    }
+  } catch {
+    // fall through
+  }
+  return new Date(Date.now() + 15 * 60 * 1000);
+}
 
 export function getAccessTokenFromCookies(names: CookieNames): string | null {
   return Cookies.get(names.accessToken) || null;
@@ -64,7 +78,10 @@ export function setCookieConsentCookie(
 }
 
 export function setAccessTokenCookie(token: string, options: TokenCookieOptions) {
-  Cookies.set(options.names.accessToken, token, tokenCookieOptions(options));
+  Cookies.set(options.names.accessToken, token, {
+    ...tokenCookieOptions(options),
+    expires: accessTokenCookieExpires(token),
+  });
 }
 
 export function setRefreshTokenCookie(token: string, options: TokenCookieOptions) {

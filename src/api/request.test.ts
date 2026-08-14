@@ -78,7 +78,7 @@ describe('performAccessTokenRefresh', () => {
     vi.unstubAllGlobals();
   });
 
-  it('calls onFailure on invalid JSON response', async () => {
+  it('does not call onFailure on invalid JSON (treat as transient)', async () => {
     const onFailure = vi.fn();
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('not-json', { status: 200 })));
 
@@ -91,9 +91,28 @@ describe('performAccessTokenRefresh', () => {
         setAccessToken: vi.fn(),
         onFailure,
       }),
-    ).rejects.toMatchObject({ status: 401 });
+    ).rejects.toMatchObject({ status: 0 });
 
-    expect(onFailure).toHaveBeenCalledOnce();
+    expect(onFailure).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
+  it('does not call onFailure when fetch throws (background/network)', async () => {
+    const onFailure = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+    await expect(
+      performAccessTokenRefresh({
+        baseURL: 'http://test/api/v1',
+        getRefreshToken: () => 'refresh',
+        request: createDefaultRefreshRequest(),
+        useCookieCredentials: true,
+        setAccessToken: vi.fn(),
+        onFailure,
+      }),
+    ).rejects.toMatchObject({ status: 0 });
+
+    expect(onFailure).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 
