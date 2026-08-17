@@ -83,6 +83,19 @@ export function isFatalRefreshFailureStatus(status: number): boolean {
   return status === 400 || status === 401 || status === 403 || status === 404;
 }
 
+function isTransientRefreshStatus(status: number): boolean {
+  return status === 0 || status === 429 || status === 502 || status === 503 || status === 504;
+}
+
+const REFRESH_TRANSIENT_ATTEMPTS = 3;
+const REFRESH_TRANSIENT_DELAY_MS = 50;
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 export async function performAccessTokenRefresh(params: {
   baseURL: string;
   getRefreshToken: () => string | null;
@@ -94,7 +107,8 @@ export async function performAccessTokenRefresh(params: {
 }): Promise<string> {
   const refreshToken = params.useCookieCredentials ? null : params.getRefreshToken();
   if (!params.useCookieCredentials && !refreshToken) {
-    params.onFailure();
+    // Missing JS token is not proof the session is dead (hydration may still
+    // install an HttpOnly marker). Do not log the user out.
     throw { error: new Error('missing refresh token'), status: 401 };
   }
 
@@ -110,43 +124,61 @@ export async function performAccessTokenRefresh(params: {
     credentials: params.useCookieCredentials ? 'include' : params.request.credentials,
   };
 
-  let response: Response;
-  try {
-    response = await fetch(
-      buildRequestUrl(params.baseURL, requestConfig.endpoint),
-      getRequestOptions(requestConfig, null, params.acceptLanguage),
-    );
-  } catch {
-    // Radio sleep / aborted fetch after backgrounding — retry, do not log out.
-    throw { error: new Error('refresh network error'), status: 0 };
-  }
-
-  const responseText = await response.text();
-
-  let data: unknown = null;
-  if (responseText) {
+  let lastStatus = 0;
+  for (let attempt = 1; attempt <= REFRESH_TRANSIENT_ATTEMPTS; attempt += 1) {
+    let response: Response;
     try {
-      data = JSON.parse(responseText);
+      response = await fetch(
+        buildRequestUrl(params.baseURL, requestConfig.endpoint),
+        getRequestOptions(requestConfig, null, params.acceptLanguage),
+      );
     } catch {
-      throw { error: new Error('invalid refresh response'), status: 0 };
+      lastStatus = 0;
+      if (attempt < REFRESH_TRANSIENT_ATTEMPTS) {
+        await wait(REFRESH_TRANSIENT_DELAY_MS * attempt);
+        continue;
+      }
+      throw { error: new Error('refresh network error'), status: 0 };
     }
-  }
 
-  const accessToken = params.request.parseAccessToken(data);
-  if (!response.ok || !accessToken) {
-    const status = response.status || 0;
-    // Rate limits / upstream blips / missing body: keep the session so resume can retry.
-    if (isFatalRefreshFailureStatus(status)) {
+    const responseText = await response.text();
+
+    let data: unknown = null;
+    if (responseText) {
+      try {
+        data = JSON.parse(responseText);
+      } catch {
+        lastStatus = 0;
+        if (attempt < REFRESH_TRANSIENT_ATTEMPTS) {
+          await wait(REFRESH_TRANSIENT_DELAY_MS * attempt);
+          continue;
+        }
+        throw { error: new Error('invalid refresh response'), status: 0 };
+      }
+    }
+
+    const accessToken = params.request.parseAccessToken(data);
+    if (response.ok && accessToken) {
+      params.setAccessToken(accessToken);
+      return accessToken;
+    }
+
+    lastStatus = response.status || 0;
+    if (isTransientRefreshStatus(lastStatus) && attempt < REFRESH_TRANSIENT_ATTEMPTS) {
+      await wait(REFRESH_TRANSIENT_DELAY_MS * attempt);
+      continue;
+    }
+
+    if (isFatalRefreshFailureStatus(lastStatus)) {
       params.onFailure();
     }
     throw {
       error: new Error('failed to refresh access token'),
-      status,
+      status: lastStatus,
     };
   }
 
-  params.setAccessToken(accessToken);
-  return accessToken;
+  throw { error: new Error('failed to refresh access token'), status: lastStatus };
 }
 
 /** One in-flight refresh per page — parallel 401 retries share the same promise. */

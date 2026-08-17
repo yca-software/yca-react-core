@@ -8,7 +8,11 @@ function shouldRetryWithRefresh(
   refreshToken: string | null | undefined,
   refresh: ApiClientConfig['refresh'],
 ): boolean {
-  if (status !== 401 || !refreshToken || !refresh || !endpoint || isRetry) {
+  if (status !== 401 || !refresh || !endpoint || isRetry) {
+    return false;
+  }
+  const canRefresh = !!refreshToken || refresh.cookieCredentialsEnabled();
+  if (!canRefresh) {
     return false;
   }
   const normalized = endpoint.replace(/^\//, '');

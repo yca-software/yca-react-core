@@ -33,7 +33,7 @@ describe('performAccessTokenRefresh', () => {
     vi.unstubAllGlobals();
   });
 
-  it('calls onFailure when refresh token is missing', async () => {
+  it('does not call onFailure when refresh token is missing', async () => {
     const onFailure = vi.fn();
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
@@ -49,7 +49,7 @@ describe('performAccessTokenRefresh', () => {
       }),
     ).rejects.toMatchObject({ status: 401 });
 
-    expect(onFailure).toHaveBeenCalledOnce();
+    expect(onFailure).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
@@ -79,10 +79,14 @@ describe('performAccessTokenRefresh', () => {
   });
 
   it('does not call onFailure on invalid JSON (treat as transient)', async () => {
+    vi.useFakeTimers();
     const onFailure = vi.fn();
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('not-json', { status: 200 })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation(() => Promise.resolve(new Response('not-json', { status: 200 }))),
+    );
 
-    await expect(
+    const pending = expect(
       performAccessTokenRefresh({
         baseURL: 'http://test/api/v1',
         getRefreshToken: () => 'refresh',
@@ -92,16 +96,20 @@ describe('performAccessTokenRefresh', () => {
         onFailure,
       }),
     ).rejects.toMatchObject({ status: 0 });
+    await vi.runAllTimersAsync();
+    await pending;
 
     expect(onFailure).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it('does not call onFailure when fetch throws (background/network)', async () => {
+    vi.useFakeTimers();
     const onFailure = vi.fn();
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
 
-    await expect(
+    const pending = expect(
       performAccessTokenRefresh({
         baseURL: 'http://test/api/v1',
         getRefreshToken: () => 'refresh',
@@ -111,9 +119,12 @@ describe('performAccessTokenRefresh', () => {
         onFailure,
       }),
     ).rejects.toMatchObject({ status: 0 });
+    await vi.runAllTimersAsync();
+    await pending;
 
     expect(onFailure).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it('applies custom excluded retry prefixes', () => {
@@ -143,18 +154,51 @@ describe('performAccessTokenRefresh', () => {
     vi.unstubAllGlobals();
   });
 
+  it('retries a 502 refresh then succeeds without onFailure', async () => {
+    vi.useFakeTimers();
+    const onFailure = vi.fn();
+    const setAccessToken = vi.fn();
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ errorCode: 'BadGateway' }), { status: 502 }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'after-blip' }), { status: 200 }),
+      );
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const pending = performAccessTokenRefresh({
+      baseURL: 'http://test/api/v1',
+      getRefreshToken: () => 'refresh',
+      request: createDefaultRefreshRequest(),
+      useCookieCredentials: true,
+      setAccessToken,
+      onFailure,
+    });
+    await vi.runAllTimersAsync();
+    await expect(pending).resolves.toBe('after-blip');
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(onFailure).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
   it('does not call onFailure on 429 (rate limit)', async () => {
+    vi.useFakeTimers();
     const onFailure = vi.fn();
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ errorCode: 'TooManyRequests' }), { status: 429 }),
+        .mockImplementation(() =>
+          Promise.resolve(
+            new Response(JSON.stringify({ errorCode: 'TooManyRequests' }), { status: 429 }),
+          ),
         ),
     );
 
-    await expect(
+    const pending = expect(
       performAccessTokenRefresh({
         baseURL: 'http://test/api/v1',
         getRefreshToken: () => 'refresh',
@@ -164,9 +208,12 @@ describe('performAccessTokenRefresh', () => {
         onFailure,
       }),
     ).rejects.toMatchObject({ status: 429 });
+    await vi.runAllTimersAsync();
+    await pending;
 
     expect(onFailure).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 });
 

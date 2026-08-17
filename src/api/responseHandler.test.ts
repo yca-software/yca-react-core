@@ -95,4 +95,41 @@ describe('createResponseHandler', () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
+
+  it('retries 401 with HttpOnly cookie credentials even when getRefreshToken is null', async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ accessToken: 'cookie-access' }), { status: 200 }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify({ me: true }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const handler = createResponseHandler({
+      baseURL: 'http://test/api/v1',
+      getAccessToken: () => 'expired',
+      getRefreshToken: () => null,
+      refresh: {
+        request: {
+          endpoint: 'auth/refresh',
+          method: 'POST',
+          buildBody: () => ({}),
+          parseAccessToken: (data) =>
+            (data as { accessToken?: string } | null)?.accessToken ?? null,
+          excludedRetryPrefixes: ['auth/'],
+        },
+        cookieCredentialsEnabled: () => true,
+        setAccessToken: vi.fn(),
+        onFailure: vi.fn(),
+      },
+    });
+
+    const result = await handler(new Response('', { status: 401 }), {
+      config: { endpoint: 'users/me', method: 'GET' },
+    });
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ me: true });
+    vi.unstubAllGlobals();
+  });
 });

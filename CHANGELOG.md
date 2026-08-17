@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.0.16 — 2026-08-17
+
+### Fixed
+
+- **API 401 retry** — HttpOnly cookie sessions retry `/auth/refresh` even when `getRefreshToken()` is null (Zustand empty after a SPA reload/deploy). Previously those 401s never refreshed and the app logged the user out.
+- **Refresh during rollouts** — `/auth/refresh` retries 429/5xx/network/invalid JSON a few times before giving up; still does **not** call `onFailure` for those. A missing JS refresh token also no longer calls `onFailure`.
+- **`isInvalidSessionStatus`** (`/auth`) — only `404` (account gone). **401 on `/users/me` is not a logout** — the client refreshes instead.
+- **`resolveApiRefreshToken`** (`/auth`) — shared HttpOnly marker vs public-route blind-refresh helper.
+
 ## 0.0.15 — 2026-08-14
 
 ### Fixed
