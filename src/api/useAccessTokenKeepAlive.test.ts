@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accessTokenNeedsRefresh } from './useAccessTokenKeepAlive';
+import { accessTokenNeedsRefresh, msUntilAccessRefresh } from './useAccessTokenKeepAlive';
 
 function jwtWithExp(expSeconds: number): string {
   const header = btoa(JSON.stringify({ alg: 'none' })).replace(/=+$/, '');
@@ -27,5 +27,20 @@ describe('accessTokenNeedsRefresh', () => {
 
   it('returns true for invalid tokens', () => {
     expect(accessTokenNeedsRefresh('not-a-jwt')).toBe(true);
+  });
+});
+
+describe('msUntilAccessRefresh', () => {
+  it('returns 0 when the token is missing or already inside the skew window', () => {
+    const now = 1_700_000_000_000;
+    expect(msUntilAccessRefresh(null, now, 120_000)).toBe(0);
+    const almostExpired = jwtWithExp(Math.floor((now + 60_000) / 1000));
+    expect(msUntilAccessRefresh(almostExpired, now, 120_000)).toBe(0);
+  });
+
+  it('returns time until skew for a fresh token', () => {
+    const now = 1_700_000_000_000;
+    const token = jwtWithExp(Math.floor((now + 15 * 60_000) / 1000));
+    expect(msUntilAccessRefresh(token, now, 120_000)).toBe(13 * 60_000);
   });
 });

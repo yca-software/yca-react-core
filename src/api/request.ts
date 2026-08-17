@@ -83,6 +83,11 @@ export function isFatalRefreshFailureStatus(status: number): boolean {
   return status === 400 || status === 401 || status === 403 || status === 404;
 }
 
+/** Background/frozen tabs must not clear the session — cookies may be omitted from the fetch. */
+export function shouldClearSessionOnRefreshFailure(): boolean {
+  return typeof document === 'undefined' || document.visibilityState !== 'hidden';
+}
+
 function isTransientRefreshStatus(status: number): boolean {
   return status === 0 || status === 429 || status === 502 || status === 503 || status === 504;
 }
@@ -169,7 +174,7 @@ export async function performAccessTokenRefresh(params: {
       continue;
     }
 
-    if (isFatalRefreshFailureStatus(lastStatus)) {
+    if (isFatalRefreshFailureStatus(lastStatus) && shouldClearSessionOnRefreshFailure()) {
       params.onFailure();
     }
     throw {

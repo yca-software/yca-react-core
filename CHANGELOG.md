@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.0.17 — 2026-08-17
+
+### Fixed
+
+- **Keep-alive** — schedule refresh from JWT `exp` (capped at 4 minutes), including background tabs. A 10-minute interval skipped hidden tabs and let the 15-minute access JWT expire.
+- **Hidden-tab refresh** — HTTP 400/401/403/404 from `/auth/refresh` while `document.hidden` do **not** call `onFailure`. Frozen/background fetches can omit cookies; logging out then is wrong. Retry when the tab is visible again.
+
 ## 0.0.16 — 2026-08-17
 
 ### Fixed

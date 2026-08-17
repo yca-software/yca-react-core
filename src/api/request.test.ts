@@ -215,6 +215,52 @@ describe('performAccessTokenRefresh', () => {
     vi.unstubAllGlobals();
     vi.useRealTimers();
   });
+
+  it('calls onFailure on 401 when the tab is visible', async () => {
+    const onFailure = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })));
+
+    await expect(
+      performAccessTokenRefresh({
+        baseURL: 'http://test/api/v1',
+        getRefreshToken: () => 'refresh',
+        request: createDefaultRefreshRequest(),
+        useCookieCredentials: false,
+        setAccessToken: vi.fn(),
+        onFailure,
+      }),
+    ).rejects.toMatchObject({ status: 401 });
+
+    expect(onFailure).toHaveBeenCalledOnce();
+    vi.unstubAllGlobals();
+  });
+
+  it('does not call onFailure on 401 when the tab is hidden', async () => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'hidden',
+    });
+    const onFailure = vi.fn();
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 401 })));
+
+    await expect(
+      performAccessTokenRefresh({
+        baseURL: 'http://test/api/v1',
+        getRefreshToken: () => 'refresh',
+        request: createDefaultRefreshRequest(),
+        useCookieCredentials: false,
+        setAccessToken: vi.fn(),
+        onFailure,
+      }),
+    ).rejects.toMatchObject({ status: 401 });
+
+    expect(onFailure).not.toHaveBeenCalled();
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      get: () => 'visible',
+    });
+    vi.unstubAllGlobals();
+  });
 });
 
 describe('executeConfiguredRefresh', () => {

@@ -4,21 +4,31 @@ import { useApiClientConfig } from './ApiClientContext';
 import { executeConfiguredRefresh } from './request';
 
 /** Typical access JWT TTL is 15m — refresh ahead of expiry. */
-const KEEP_ALIVE_INTERVAL_MS = 10 * 60 * 1000;
 const REFRESH_SKEW_MS = 2 * 60 * 1000;
+/** Cap so we re-check often enough if the JWT has no exp. */
+const KEEP_ALIVE_MAX_DELAY_MS = 4 * 60 * 1000;
 
 export function accessTokenNeedsRefresh(
   token: string | null,
   nowMs: number = Date.now(),
   skewMs: number = REFRESH_SKEW_MS,
 ): boolean {
-  if (!token) return true;
+  return msUntilAccessRefresh(token, nowMs, skewMs) === 0;
+}
+
+/** Milliseconds until the access JWT should be refreshed (0 = now). */
+export function msUntilAccessRefresh(
+  token: string | null,
+  nowMs: number = Date.now(),
+  skewMs: number = REFRESH_SKEW_MS,
+): number {
+  if (!token) return 0;
   try {
     const { exp } = jwtDecode<{ exp?: number }>(token);
-    if (typeof exp !== 'number') return true;
-    return exp * 1000 <= nowMs + skewMs;
+    if (typeof exp !== 'number') return 0;
+    return Math.max(0, exp * 1000 - skewMs - nowMs);
   } catch {
-    return true;
+    return 0;
   }
 }
 
@@ -31,8 +41,8 @@ export type UseAccessTokenKeepAliveOptions = {
 
 /**
  * Keeps the access token fresh while a session exists.
- * - Interval while the tab is foregrounded (browsers throttle background timers)
- * - Immediate refresh when the tab becomes visible / focused after expiry
+ * - Timeout scheduled from JWT exp (capped at 4 minutes)
+ * - Also refreshes on visibility / focus / pageshow after expiry
  */
 export function useAccessTokenKeepAlive(options: UseAccessTokenKeepAliveOptions): void {
   const apiConfig = useApiClientConfig();
@@ -44,34 +54,44 @@ export function useAccessTokenKeepAlive(options: UseAccessTokenKeepAliveOptions)
     }
 
     const refreshIfNeeded = () => {
-      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-        return;
-      }
       if (!accessTokenNeedsRefresh(getAccessToken())) {
         return;
       }
       void executeConfiguredRefresh(apiConfig).catch(() => {
-        // Hard auth failures clear via onRefreshFailure; 429/5xx stay intact.
+        // Hard auth failures clear via onRefreshFailure only while the tab is visible.
       });
+    };
+
+    let timeoutId = 0;
+    const schedule = () => {
+      window.clearTimeout(timeoutId);
+      const until = msUntilAccessRefresh(getAccessToken());
+      const delay =
+        until === 0 ? KEEP_ALIVE_MAX_DELAY_MS : Math.min(until, KEEP_ALIVE_MAX_DELAY_MS);
+      timeoutId = window.setTimeout(() => {
+        refreshIfNeeded();
+        schedule();
+      }, delay);
     };
 
     const onVisibility = () => {
       if (document.visibilityState === 'visible') {
         refreshIfNeeded();
+        schedule();
       }
     };
 
     refreshIfNeeded();
+    schedule();
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('focus', refreshIfNeeded);
     window.addEventListener('pageshow', refreshIfNeeded);
-    const id = window.setInterval(refreshIfNeeded, KEEP_ALIVE_INTERVAL_MS);
 
     return () => {
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('focus', refreshIfNeeded);
       window.removeEventListener('pageshow', refreshIfNeeded);
-      window.clearInterval(id);
+      window.clearTimeout(timeoutId);
     };
   }, [apiConfig, enabled, getAccessToken]);
 }
