@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Checkbox,
   Input,
   Table,
   TableBody,
@@ -28,6 +29,8 @@ export interface AdminListPageColumn<T> {
   /** Column class for alignment/width */
   className?: string;
 }
+
+export type AdminListSelectionMode = 'none' | 'multiple';
 
 export interface AdminListPageProps<T> {
   title: string;
@@ -62,6 +65,14 @@ export interface AdminListPageProps<T> {
   onSearchClear?: () => void;
   /** Enter-key handler for submit mode (typically from `useAdminListPage().onSearchKeyDown`). */
   onSearchKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+  /** Optional row multi-select (default none). */
+  selectionMode?: AdminListSelectionMode;
+  selectedKeys?: Set<string>;
+  onSelectedKeysChange?: (keys: Set<string>) => void;
+  /** Rendered in the card header when selectionMode is multiple and keys are selected. */
+  bulkActions?: React.ReactNode;
+  /** Accessible label for the selection checkbox column. */
+  selectionLabel?: string;
 }
 
 /**
@@ -91,10 +102,22 @@ export function AdminListPage<T>({
   onSearchSubmit,
   onSearchClear,
   onSearchKeyDown,
+  selectionMode = 'none',
+  selectedKeys,
+  onSelectedKeysChange,
+  bulkActions,
+  selectionLabel = 'Select',
 }: AdminListPageProps<T>) {
   const safeItems = items.filter((item): item is T => item != null && typeof item === 'object');
   const isSubmitMode = searchMode === 'submit';
   const hasSearchText = search.trim().length > 0;
+  const selectionEnabled = selectionMode === 'multiple' && onSelectedKeysChange != null;
+  const selected = selectedKeys ?? new Set<string>();
+  const visibleKeys = safeItems.map((item) => getRowKey(item)).filter(Boolean);
+  const selectedVisibleCount = visibleKeys.filter((key) => selected.has(key)).length;
+  const allVisibleSelected = visibleKeys.length > 0 && selectedVisibleCount === visibleKeys.length;
+  const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
+  const columnCount = columns.length + (selectionEnabled ? 1 : 0);
 
   const handleSearchInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (event) => {
     if (isSubmitMode && event.key === 'Enter') {
@@ -102,6 +125,30 @@ export function AdminListPage<T>({
       onSearchSubmit?.();
     }
     onSearchKeyDown?.(event);
+  };
+
+  const toggleKey = (key: string, checked: boolean) => {
+    if (!onSelectedKeysChange) return;
+    const next = new Set(selected);
+    if (checked) {
+      next.add(key);
+    } else {
+      next.delete(key);
+    }
+    onSelectedKeysChange(next);
+  };
+
+  const toggleAllVisible = (checked: boolean) => {
+    if (!onSelectedKeysChange) return;
+    const next = new Set(selected);
+    for (const key of visibleKeys) {
+      if (checked) {
+        next.add(key);
+      } else {
+        next.delete(key);
+      }
+    }
+    onSelectedKeysChange(next);
   };
 
   return (
@@ -120,6 +167,9 @@ export function AdminListPage<T>({
             <CardTitle>{cardTitle}</CardTitle>
             {!isSubmitMode ? <CardDescription>{searchPlaceholder}</CardDescription> : null}
           </div>
+          {selectionEnabled && selected.size > 0 && bulkActions ? (
+            <div className="flex flex-wrap items-center gap-2">{bulkActions}</div>
+          ) : null}
           {isSubmitMode ? (
             <div
               className={cn(
@@ -193,6 +243,22 @@ export function AdminListPage<T>({
               <Table className="min-w-[400px]">
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    {selectionEnabled ? (
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={
+                            allVisibleSelected
+                              ? true
+                              : someVisibleSelected
+                                ? 'indeterminate'
+                                : false
+                          }
+                          onCheckedChange={(value) => toggleAllVisible(value === true)}
+                          aria-label={selectionLabel}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </TableHead>
+                    ) : null}
                     {columns.map((col) => (
                       <TableHead key={col.key} className={col.className}>
                         {col.header}
@@ -201,34 +267,48 @@ export function AdminListPage<T>({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {safeItems.map((item, index) => (
-                    <TableRow
-                      key={getRowKey(item) || `row-${index}`}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => onRowClick(item)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          onRowClick(item);
-                        }
-                      }}
-                      className="cursor-pointer hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                    >
-                      {columns.map((col) => (
-                        <TableCell
-                          key={col.key}
-                          className={cn(col.className ?? 'text-muted-foreground')}
-                        >
-                          {col.render(item)}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
+                  {safeItems.map((item, index) => {
+                    const rowKey = getRowKey(item) || `row-${index}`;
+                    const isSelected = selected.has(rowKey);
+                    return (
+                      <TableRow
+                        key={rowKey}
+                        role="button"
+                        tabIndex={0}
+                        data-state={isSelected ? 'selected' : undefined}
+                        onClick={() => onRowClick(item)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            onRowClick(item);
+                          }
+                        }}
+                        className="cursor-pointer hover:bg-muted/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                      >
+                        {selectionEnabled ? (
+                          <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={(value) => toggleKey(rowKey, value === true)}
+                              aria-label={`${selectionLabel} ${rowKey}`}
+                            />
+                          </TableCell>
+                        ) : null}
+                        {columns.map((col) => (
+                          <TableCell
+                            key={col.key}
+                            className={cn(col.className ?? 'text-muted-foreground')}
+                          >
+                            {col.render(item)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    );
+                  })}
                   {hasNextPage && (
                     <TableRow ref={loadMoreRef}>
                       <TableCell
-                        colSpan={columns.length}
+                        colSpan={columnCount}
                         className="text-center text-muted-foreground"
                       >
                         {isFetchingNextPage ? (

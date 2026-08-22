@@ -125,4 +125,27 @@ describe('AdminListPage', () => {
     expect(screen.getByRole('button', { name: 'Find' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
   });
+
+  it('supports multi-select without opening the row on checkbox click', async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    const onSelectedKeysChange = vi.fn();
+
+    render(
+      <AdminListPage
+        {...baseProps}
+        items={[{ id: '1', name: 'Ada' }]}
+        onRowClick={onRowClick}
+        selectionMode="multiple"
+        selectedKeys={new Set()}
+        onSelectedKeysChange={onSelectedKeysChange}
+        selectionLabel="Select device"
+        bulkActions={<button type="button">Update</button>}
+      />,
+    );
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select device 1' }));
+    expect(onSelectedKeysChange).toHaveBeenCalled();
+    expect(onRowClick).not.toHaveBeenCalled();
+  });
 });
