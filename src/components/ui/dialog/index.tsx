@@ -5,6 +5,7 @@ import type * as React from 'react';
 import { preventDismissOnPortaledOverlay } from '../../../lib/radix-overlays';
 import { surfaceOverlay } from '../../../lib/surfaces';
 import { cn } from '../../../lib/utils';
+import { InsideModalScrollLockProvider } from '../inside-modal-scroll-lock';
 
 function Dialog({ ...props }: React.ComponentProps<typeof DialogPrimitive.Root>) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -81,7 +82,8 @@ function DialogContent({
         )}
         {...props}
       >
-        {children}
+        {/* Keep Select/MultiSelect menus in-tree so react-remove-scroll does not swallow wheel events. */}
+        <InsideModalScrollLockProvider>{children}</InsideModalScrollLockProvider>
         {showCloseButton && (
           <DialogPrimitive.Close
             data-slot="dialog-close"

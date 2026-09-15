@@ -7,6 +7,7 @@ import {
   preventDismissOnPortaledOverlay,
 } from '../../../lib/radix-overlays';
 import { cn } from '../../../lib/utils';
+import { InsideModalScrollLockProvider } from '../inside-modal-scroll-lock';
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
   return <SheetPrimitive.Root {...props} />;
@@ -86,7 +87,8 @@ function SheetContent({
         )}
         {...props}
       >
-        {children}
+        {/* Keep Select/MultiSelect menus in-tree so react-remove-scroll does not swallow wheel events. */}
+        <InsideModalScrollLockProvider>{children}</InsideModalScrollLockProvider>
         <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-6 right-6 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none cursor-pointer">
           <XIcon className="h-4 w-4" />
           <span className="sr-only">Close</span>

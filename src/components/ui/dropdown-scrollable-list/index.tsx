@@ -76,6 +76,10 @@ export function DropdownScrollableList({
             : scrollAreaClassName,
         )}
         onScroll={update}
+        onWheel={(event) => {
+          // Nested overflow parents (drawer body) must not steal wheel while this list scrolls.
+          event.stopPropagation();
+        }}
       >
         {children}
       </div>
