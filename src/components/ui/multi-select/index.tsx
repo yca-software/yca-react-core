@@ -24,6 +24,12 @@ export interface MultiSelectTranslations {
   searchPlaceholder?: string;
   noOptionsText?: string;
   removeOptionAriaLabel?: string;
+  /**
+   * When set and there are selected values with `showSelectedTags`, the trigger
+   * shows this label instead of `triggerLabel`. Omit / leave empty for legacy
+   * behavior (always `triggerLabel`).
+   */
+  addMoreLabel?: string;
 }
 
 interface MultiSelectProps {
@@ -38,11 +44,14 @@ interface MultiSelectProps {
   translations?: MultiSelectTranslations;
 }
 
-const DEFAULT_TRANSLATIONS: Required<MultiSelectTranslations> = {
+const DEFAULT_TRANSLATIONS: Required<Omit<MultiSelectTranslations, 'addMoreLabel'>> & {
+  addMoreLabel: string;
+} = {
   triggerLabel: 'Select options',
   searchPlaceholder: 'Search...',
   noOptionsText: 'No options',
   removeOptionAriaLabel: 'Remove',
+  addMoreLabel: '',
 };
 
 function MultiSelect({
@@ -69,6 +78,9 @@ function MultiSelect({
     if (!q) return options;
     return options.filter((opt) => opt.label.toLowerCase().includes(q));
   }, [options, search]);
+
+  const addMore = t.addMoreLabel.trim();
+  const triggerText = value.length > 0 && showSelectedTags && addMore ? addMore : t.triggerLabel;
 
   const toggle = (optionValue: string, checked: boolean) => {
     if (checked) {
@@ -108,12 +120,12 @@ function MultiSelect({
             type="button"
             variant="outline"
             className="w-full justify-between"
-            aria-label={ariaLabel ?? t.triggerLabel}
+            aria-label={ariaLabel ?? triggerText}
             disabled={disabled}
           >
             <span className="inline-flex items-center gap-2">
               <CheckSquare className="h-4 w-4" />
-              {t.triggerLabel}
+              {triggerText}
             </span>
             {!showSelectedTags && value.length > 0 ? (
               <Badge variant="secondary">{value.length}</Badge>

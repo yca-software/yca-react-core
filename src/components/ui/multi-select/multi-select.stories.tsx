@@ -41,3 +41,30 @@ export const Default: Story = {
     );
   },
 };
+
+export const WithAddMoreLabel: Story = {
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'When `showSelectedTags` is on and `translations.addMoreLabel` is set, the trigger switches to that label after the first selection. Omitting `addMoreLabel` keeps legacy `triggerLabel` behavior.',
+      },
+    },
+  },
+  render: () => {
+    const [value, setValue] = useState<string[]>(['a']);
+    return (
+      <MultiSelect
+        value={value}
+        onValueChange={setValue}
+        options={options}
+        className="w-72"
+        showSelectedTags
+        translations={{
+          triggerLabel: 'All items',
+          addMoreLabel: 'Add more…',
+        }}
+      />
+    );
+  },
+};
