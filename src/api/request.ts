@@ -188,6 +188,9 @@ export async function performAccessTokenRefresh(params: {
 
 /** One in-flight refresh per page — parallel 401 retries share the same promise. */
 let refreshInFlight: Promise<string> | null = null;
+/** After 429/5xx, pause new refresh attempts so the SPA cannot hammer the API. */
+let refreshCooldownUntilMs = 0;
+const REFRESH_COOLDOWN_MS = 30_000;
 
 export async function executeConfiguredRefresh(config: ApiClientConfig): Promise<string> {
   const refresh = config.refresh;
@@ -199,6 +202,11 @@ export async function executeConfiguredRefresh(config: ApiClientConfig): Promise
     return refreshInFlight;
   }
 
+  const now = Date.now();
+  if (refreshCooldownUntilMs > now) {
+    throw { error: new Error('refresh cooling down'), status: 429 };
+  }
+
   refresh.onStart?.();
   refreshInFlight = performAccessTokenRefresh({
     baseURL: config.baseURL,
@@ -208,10 +216,22 @@ export async function executeConfiguredRefresh(config: ApiClientConfig): Promise
     setAccessToken: refresh.setAccessToken,
     onFailure: refresh.onFailure,
     acceptLanguage: config.getAcceptLanguage?.(),
-  }).finally(() => {
-    refreshInFlight = null;
-    refresh.onEnd?.();
-  });
+  })
+    .then((token) => {
+      refreshCooldownUntilMs = 0;
+      return token;
+    })
+    .catch((err: { status?: number }) => {
+      const status = typeof err?.status === 'number' ? err.status : 0;
+      if (isTransientRefreshStatus(status)) {
+        refreshCooldownUntilMs = Date.now() + REFRESH_COOLDOWN_MS;
+      }
+      throw err;
+    })
+    .finally(() => {
+      refreshInFlight = null;
+      refresh.onEnd?.();
+    });
 
   return refreshInFlight;
 }

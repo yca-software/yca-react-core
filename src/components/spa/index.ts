@@ -9,6 +9,7 @@ export * from './create-bound-query-state';
 export * from './date-range-filter';
 export * from './detail-field-list';
 export * from './entity-row';
+export * from './labeled-select';
 export * from './page-loader';
 export * from './query-state';
 export * from './route-suspense';

@@ -1,9 +1,8 @@
-import { Loader2, Search, X } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 
 import type { AdminListSearchMode } from '../../../hooks/useAdminListPage';
 import { cn } from '../../../lib/utils';
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
@@ -11,6 +10,7 @@ import {
   CardTitle,
   Checkbox,
   Input,
+  SearchField,
   Table,
   TableBody,
   TableCell,
@@ -110,7 +110,6 @@ export function AdminListPage<T>({
 }: AdminListPageProps<T>) {
   const safeItems = items.filter((item): item is T => item != null && typeof item === 'object');
   const isSubmitMode = searchMode === 'submit';
-  const hasSearchText = search.trim().length > 0;
   const selectionEnabled = selectionMode === 'multiple' && onSelectedKeysChange != null;
   const selected = selectedKeys ?? new Set<string>();
   const visibleKeys = safeItems.map((item) => getRowKey(item)).filter(Boolean);
@@ -118,14 +117,6 @@ export function AdminListPage<T>({
   const allVisibleSelected = visibleKeys.length > 0 && selectedVisibleCount === visibleKeys.length;
   const someVisibleSelected = selectedVisibleCount > 0 && !allVisibleSelected;
   const columnCount = columns.length + (selectionEnabled ? 1 : 0);
-
-  const handleSearchInputKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (event) => {
-    if (isSubmitMode && event.key === 'Enter') {
-      event.preventDefault();
-      onSearchSubmit?.();
-    }
-    onSearchKeyDown?.(event);
-  };
 
   const toggleKey = (key: string, checked: boolean) => {
     if (!onSelectedKeysChange) return;
@@ -171,52 +162,16 @@ export function AdminListPage<T>({
             <div className="flex flex-wrap items-center gap-2">{bulkActions}</div>
           ) : null}
           {isSubmitMode ? (
-            <div
-              className={cn(
-                'flex h-9 w-full min-w-0 max-w-full overflow-hidden rounded-md border border-input bg-background shadow-xs sm:max-w-sm',
-                'transition-[border-color,box-shadow] focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20',
-              )}
-            >
-              <div className="relative flex min-w-0 flex-1 items-center">
-                <Input
-                  placeholder={searchPlaceholder}
-                  value={search}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  onKeyDown={handleSearchInputKeyDown}
-                  className={cn(
-                    'h-9 rounded-none rounded-l-md border-0 bg-transparent px-3 shadow-none',
-                    'focus-visible:border-transparent focus-visible:ring-0',
-                    hasSearchText && 'pr-9',
-                  )}
-                  aria-label={searchPlaceholder}
-                />
-                {hasSearchText ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    onClick={onSearchClear}
-                    aria-label={clearButtonLabel}
-                    className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" aria-hidden />
-                  </Button>
-                ) : null}
-              </div>
-              <Button
-                type="button"
-                variant="default"
-                onClick={onSearchSubmit}
-                aria-label={searchButtonLabel}
-                className={cn(
-                  'h-full w-10 shrink-0 rounded-none rounded-r-md border-0 border-l border-primary-foreground/15 px-0 shadow-none',
-                  'hover:bg-primary/90 active:bg-primary/95',
-                  'shadow-[inset_0_1px_0_0_color-mix(in_oklch,var(--primary-foreground)_20%,transparent)]',
-                )}
-              >
-                <Search className="h-4 w-4" aria-hidden />
-              </Button>
-            </div>
+            <SearchField
+              className="max-w-full sm:max-w-sm"
+              value={search}
+              onValueChange={onSearchChange}
+              onSubmit={() => onSearchSubmit?.()}
+              onClear={onSearchClear}
+              placeholder={searchPlaceholder}
+              searchButtonLabel={searchButtonLabel}
+              clearButtonLabel={clearButtonLabel}
+            />
           ) : (
             <div className="relative max-w-full sm:max-w-sm">
               <Search
@@ -227,6 +182,7 @@ export function AdminListPage<T>({
                 placeholder={searchPlaceholder}
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={onSearchKeyDown}
                 className="pl-9"
                 aria-label={searchPlaceholder}
               />

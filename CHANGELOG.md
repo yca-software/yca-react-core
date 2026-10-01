@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+## 0.0.22 — 2026-10-01
+
+### Added
+
+- **`SearchField`** (`/ui`) — submit-mode search control with clear + search actions; `AdminListPage` submit mode uses it.
+- **`LabeledSelect`** (`/spa`) — label + `Select` filter control for toolbar filters.
+- **`EventCalendar`** (`/ui`) — month/week/day event calendar.
+
+### Fixed
+
+- **Refresh cooldown** — after a transient `/auth/refresh` failure (429/5xx), pause new refresh attempts for 30s so the SPA cannot hammer the API.
+
 ## 0.0.17 — 2026-08-17
 
 ### Fixed
