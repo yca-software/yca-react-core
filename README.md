@@ -73,6 +73,15 @@ export function useTranslationNamespace(ns: string | string[]) {
 
 **Keep in the app, not the library:** routes, TanStack Query hooks per resource, zustand stores, `locales/**`, billing/Paddle, permission constants, PostHog.
 
+Native shells may supply `refreshExecutor` to `createApiProvider` options. The
+executor must call the host's secure session command and return only
+`{ accessToken, expiresAt }`; the host keeps its rotating refresh credential in
+the OS vault. The API client shares concurrent refresh attempts, validates the
+returned expiry, and retries a protected 401 once. Browser consumers omit this
+option and retain their existing HttpOnly-cookie refresh behavior. The app must
+hydrate its initial native access session and clear its own state after host
+revocation; this library does not own a platform vault or navigation.
+
 ## Theming
 
 Import styles once, then override CSS variables in your global stylesheet:

@@ -11,7 +11,7 @@ function shouldRetryWithRefresh(
   if (status !== 401 || !refresh || !endpoint || isRetry) {
     return false;
   }
-  const canRefresh = !!refreshToken || refresh.cookieCredentialsEnabled();
+  const canRefresh = !!refresh.executor || !!refreshToken || refresh.cookieCredentialsEnabled();
   if (!canRefresh) {
     return false;
   }

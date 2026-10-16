@@ -39,6 +39,8 @@ export interface RefreshRequestConfig {
 
 export interface RefreshConfig {
   request: RefreshRequestConfig;
+  /** Native hosts rotate their own vaulted refresh credential and return access only. */
+  executor?: () => Promise<{ accessToken: string; expiresAt: string }>;
   cookieCredentialsEnabled: () => boolean;
   setAccessToken: (token: string) => void;
   onFailure: () => void;

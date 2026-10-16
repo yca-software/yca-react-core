@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.23 — pending publication
+
+### Added
+
+- **Native API refresh executor** (`/api`) — an optional host-owned access-token refresh path for desktop and mobile apps. Browser consumers keep their existing HttpOnly-cookie flow. Native refresh remains single-flight, validates the returned token expiry, and participates in the API client's 401 retry and cooldown behavior.
+
 ## 0.0.22 — 2026-10-01
 
 ### Added

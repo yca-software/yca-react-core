@@ -2,6 +2,46 @@ import { describe, expect, it, vi } from 'vitest';
 import { createResponseHandler } from './responseHandler';
 
 describe('createResponseHandler', () => {
+  it('retries one protected request through native executor with no JS refresh token', async () => {
+    const fetchSpy = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({ me: true }), { status: 200 }));
+    vi.stubGlobal('fetch', fetchSpy);
+    const executor = vi.fn().mockResolvedValue({
+      accessToken: 'native-access',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    });
+    const handler = createResponseHandler({
+      baseURL: 'https://office.example/api/v1',
+      getAccessToken: () => 'expired',
+      getRefreshToken: () => null,
+      refresh: {
+        request: {
+          endpoint: 'auth/refresh',
+          method: 'POST',
+          buildBody: () => ({}),
+          parseAccessToken: () => null,
+          excludedRetryPrefixes: ['auth/'],
+        },
+        executor,
+        cookieCredentialsEnabled: () => false,
+        setAccessToken: vi.fn(),
+        onFailure: vi.fn(),
+      },
+    });
+    await expect(
+      handler(new Response('', { status: 401 }), {
+        config: { endpoint: 'users/me', method: 'GET' },
+      }),
+    ).resolves.toEqual({ me: true });
+    expect(executor).toHaveBeenCalledOnce();
+    expect(fetchSpy).toHaveBeenCalledOnce();
+    expect(fetchSpy.mock.calls[0]?.[1]?.headers).toMatchObject({
+      Authorization: 'Bearer native-access',
+    });
+    vi.unstubAllGlobals();
+  });
+
   it('parses successful JSON responses', async () => {
     const handler = createResponseHandler({
       baseURL: 'http://test/api/v1',

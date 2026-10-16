@@ -208,15 +208,41 @@ export async function executeConfiguredRefresh(config: ApiClientConfig): Promise
   }
 
   refresh.onStart?.();
-  refreshInFlight = performAccessTokenRefresh({
-    baseURL: config.baseURL,
-    getRefreshToken: config.getRefreshToken,
-    request: refresh.request,
-    useCookieCredentials: refresh.cookieCredentialsEnabled(),
-    setAccessToken: refresh.setAccessToken,
-    onFailure: refresh.onFailure,
-    acceptLanguage: config.getAcceptLanguage?.(),
-  })
+  const refreshAttempt = refresh.executor
+    ? Promise.resolve()
+        .then(() => refresh.executor!())
+        .then(({ accessToken, expiresAt }) => {
+          if (
+            !accessToken ||
+            !expiresAt ||
+            !Number.isFinite(Date.parse(expiresAt)) ||
+            Date.parse(expiresAt) <= Date.now()
+          ) {
+            throw { error: new Error('invalid native refresh response'), status: 0 };
+          }
+          refresh.setAccessToken(accessToken);
+          return accessToken;
+        })
+        .catch((err: { status?: number }) => {
+          if (
+            typeof err?.status === 'number' &&
+            isFatalRefreshFailureStatus(err.status) &&
+            shouldClearSessionOnRefreshFailure()
+          ) {
+            refresh.onFailure();
+          }
+          throw err;
+        })
+    : performAccessTokenRefresh({
+        baseURL: config.baseURL,
+        getRefreshToken: config.getRefreshToken,
+        request: refresh.request,
+        useCookieCredentials: refresh.cookieCredentialsEnabled(),
+        setAccessToken: refresh.setAccessToken,
+        onFailure: refresh.onFailure,
+        acceptLanguage: config.getAcceptLanguage?.(),
+      });
+  refreshInFlight = refreshAttempt
     .then((token) => {
       refreshCooldownUntilMs = 0;
       return token;

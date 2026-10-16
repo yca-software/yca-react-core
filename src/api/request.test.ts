@@ -264,6 +264,43 @@ describe('performAccessTokenRefresh', () => {
 });
 
 describe('executeConfiguredRefresh', () => {
+  it('uses one injected native refresh without exposing a refresh token to fetch', async () => {
+    let resolveNative!: (value: { accessToken: string; expiresAt: string }) => void;
+    const executor = vi.fn(
+      () =>
+        new Promise<{ accessToken: string; expiresAt: string }>((resolve) => {
+          resolveNative = resolve;
+        }),
+    );
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const setAccessToken = vi.fn();
+    const config = {
+      baseURL: 'https://office.example/api/v1',
+      getAccessToken: () => null,
+      getRefreshToken: () => null,
+      refresh: {
+        request: createDefaultRefreshRequest(),
+        executor,
+        cookieCredentialsEnabled: () => false,
+        setAccessToken,
+        onFailure: vi.fn(),
+      },
+    };
+    const first = executeConfiguredRefresh(config);
+    const second = executeConfiguredRefresh(config);
+    await Promise.resolve();
+    expect(executor).toHaveBeenCalledOnce();
+    resolveNative({
+      accessToken: 'native-access',
+      expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    });
+    await expect(Promise.all([first, second])).resolves.toEqual(['native-access', 'native-access']);
+    expect(setAccessToken).toHaveBeenCalledExactlyOnceWith('native-access');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
+  });
+
   it('dedupes concurrent refresh calls into one HTTP request', async () => {
     let resolveFetch!: (value: Response) => void;
     const fetchSpy = vi.fn().mockImplementation(
@@ -295,5 +332,23 @@ describe('executeConfiguredRefresh', () => {
     await expect(Promise.all([p1, p2])).resolves.toEqual(['shared', 'shared']);
     expect(setAccessToken).toHaveBeenCalledOnce();
     vi.unstubAllGlobals();
+  });
+
+  it('rejects an expired native access response before installing it', async () => {
+    const setAccessToken = vi.fn();
+    const config = {
+      baseURL: 'https://office.example/api/v1',
+      getAccessToken: () => null,
+      getRefreshToken: () => null,
+      refresh: {
+        request: createDefaultRefreshRequest(),
+        executor: async () => ({ accessToken: 'stale', expiresAt: new Date(0).toISOString() }),
+        cookieCredentialsEnabled: () => false,
+        setAccessToken,
+        onFailure: vi.fn(),
+      },
+    };
+    await expect(executeConfiguredRefresh(config)).rejects.toMatchObject({ status: 0 });
+    expect(setAccessToken).not.toHaveBeenCalled();
   });
 });

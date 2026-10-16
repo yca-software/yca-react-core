@@ -15,6 +15,8 @@ export interface CreateApiProviderOptions {
   getAcceptLanguage?: () => string;
   onRefreshStart?: () => void;
   onRefreshEnd?: () => void;
+  /** Optional native refresh boundary; browser apps retain the default HTTP cookie flow. */
+  refreshExecutor?: () => Promise<{ accessToken: string; expiresAt: string }>;
   /** Refresh endpoint path relative to baseURL. Defaults to `auth/refresh`. */
   refreshEndpoint?: string;
   /** Paths that must not trigger automatic refresh retry on 401. Defaults to `['auth/']`. */
@@ -40,6 +42,7 @@ export function createApiProvider(useOptions: () => CreateApiProviderOptions) {
             endpoint: options.refreshEndpoint,
             excludedRetryPrefixes: options.refreshExcludedPrefixes,
           }),
+          executor: options.refreshExecutor,
           cookieCredentialsEnabled: options.cookieCredentialsEnabled,
           setAccessToken: options.setAccessToken,
           onFailure: options.onRefreshFailure,
