@@ -17,26 +17,25 @@ export interface TooltipProps {
   delayDuration?: number;
   /**
    * Delay (in ms) before the tooltip closes after hover ends.
+   * Keep long enough to move the pointer onto the bubble.
    */
   closeDelay?: number;
 }
 
 /**
- * Tooltip that opens only on hover (not on focus), so it does not open when
- * the trigger receives focus from keyboard or from opening a dialog/sheet.
- *
- * Includes a small hover delay to avoid "tooltip spam" when simply moving
- * the mouse across the screen.
+ * Tooltip that stays open while the pointer is over the trigger or the content.
+ * On touch / click, toggles open until tap-away or Escape.
  */
 export function Tooltip({
   content,
   children,
   side = 'top',
   align = 'center',
-  delayDuration = 400,
-  closeDelay = 100,
+  delayDuration = 200,
+  closeDelay = 280,
 }: TooltipProps) {
   const [open, setOpen] = React.useState(false);
+  const stickyRef = React.useRef(false);
 
   const openTimeoutRef = React.useRef<number | null>(null);
   const closeTimeoutRef = React.useRef<number | null>(null);
@@ -55,11 +54,23 @@ export function Tooltip({
     }
   }, []);
 
+  const scheduleClose = React.useCallback(() => {
+    if (stickyRef.current) return;
+    clearOpenTimeout();
+    clearCloseTimeout();
+    if (closeDelay === 0) {
+      setOpen(false);
+      return;
+    }
+    closeTimeoutRef.current = window.setTimeout(() => {
+      setOpen(false);
+    }, closeDelay);
+  }, [clearCloseTimeout, clearOpenTimeout, closeDelay]);
+
   const handleOpenChange = React.useCallback(
     (next: boolean) => {
-      // Let Radix close the tooltip (e.g. on Escape, outside interactions),
-      // but we control opening via our own hover timers.
       if (!next) {
+        stickyRef.current = false;
         clearOpenTimeout();
         clearCloseTimeout();
         setOpen(false);
@@ -71,25 +82,26 @@ export function Tooltip({
   const handlePointerEnter = React.useCallback(() => {
     clearCloseTimeout();
     clearOpenTimeout();
-
     openTimeoutRef.current = window.setTimeout(() => {
       setOpen(true);
     }, delayDuration);
   }, [clearCloseTimeout, clearOpenTimeout, delayDuration]);
 
   const handlePointerLeave = React.useCallback(() => {
-    clearOpenTimeout();
-    clearCloseTimeout();
+    scheduleClose();
+  }, [scheduleClose]);
 
-    if (closeDelay === 0) {
-      setOpen(false);
-      return;
-    }
-
-    closeTimeoutRef.current = window.setTimeout(() => {
-      setOpen(false);
-    }, closeDelay);
-  }, [clearCloseTimeout, clearOpenTimeout, closeDelay]);
+  const handleTriggerClick = React.useCallback(
+    (e: React.MouseEvent | React.PointerEvent) => {
+      // Touch / click: toggle sticky open so mobile can read the content.
+      if (e.detail === 0) return;
+      clearOpenTimeout();
+      clearCloseTimeout();
+      stickyRef.current = !open;
+      setOpen((prev) => !prev);
+    },
+    [clearCloseTimeout, clearOpenTimeout, open],
+  );
 
   React.useEffect(
     () => () => {
@@ -105,6 +117,7 @@ export function Tooltip({
         asChild
         onPointerEnter={handlePointerEnter}
         onPointerLeave={handlePointerLeave}
+        onClick={handleTriggerClick}
       >
         {children}
       </TooltipPrimitive.Trigger>
