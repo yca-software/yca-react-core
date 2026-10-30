@@ -3,6 +3,7 @@ import type { DateRange } from 'react-day-picker';
 import { dateRangePickerTranslations } from '../../../lib/dateRangePickerTranslations';
 import { cn } from '../../../lib/utils';
 import { DateRangePicker } from '../../ui/date-range-picker';
+import { Label } from '../../ui/label';
 
 export interface DateRangeFilterProps {
   label: string;
@@ -52,10 +53,14 @@ export function DateRangeFilter({
     />
   );
 
+  const toolbarLabel = (
+    <Label className="text-xs font-medium tracking-normal text-muted-foreground">{label}</Label>
+  );
+
   if (toolbar) {
     return (
       <div className={cn('flex min-w-0 w-full flex-col gap-1', className)}>
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        {toolbarLabel}
         {picker}
       </div>
     );
@@ -64,7 +69,7 @@ export function DateRangeFilter({
   if (inline) {
     return (
       <div className={cn('flex w-full shrink-0 flex-col gap-1 sm:w-auto', className)}>
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        {toolbarLabel}
         {picker}
         {hint ? <p className="text-[0.65rem] text-muted-foreground">{hint}</p> : null}
       </div>

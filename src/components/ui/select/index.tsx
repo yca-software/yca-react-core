@@ -86,7 +86,7 @@ function Select({
             controlFocus,
             'flex h-9 w-full cursor-pointer items-center justify-between px-3 py-2 text-sm',
             'hover:bg-accent/40 disabled:pointer-events-none disabled:opacity-50',
-            !value && 'text-muted-foreground',
+            !selectedOption && 'text-muted-foreground',
             triggerClassName,
             className,
           )}
@@ -124,10 +124,8 @@ function Select({
             filteredOptions.map((opt) => (
               <DropdownMenuItem
                 key={opt.value}
-                onClick={() => {
+                onSelect={() => {
                   onValueChange(opt.value);
-                  setOpen(false);
-                  setSearch('');
                 }}
               >
                 {opt.label}

@@ -33,6 +33,20 @@ function DrawerWithSelect({ onOpenChange }: { onOpenChange: (open: boolean) => v
   );
 }
 
+function DrawerWithInfo() {
+  const [open, setOpen] = useState(true);
+  return (
+    <FormDrawer
+      open={open}
+      onOpenChange={setOpen}
+      title="Pendik DC"
+      info="Site finance workspace — spend, utilities, invoices."
+    >
+      <p>Body</p>
+    </FormDrawer>
+  );
+}
+
 describe('FormDrawer', () => {
   it('stays open when a Select option is chosen', async () => {
     const user = userEvent.setup();
@@ -55,5 +69,20 @@ describe('FormDrawer', () => {
 
     expect(screen.getByRole('menuitem', { name: 'Option 12' })).toBeInTheDocument();
     expect(document.querySelector('[data-slot="dropdown-menu-content"]')).toBeTruthy();
+  });
+
+  it('does not show title info on open until the info control is clicked', async () => {
+    const user = userEvent.setup();
+    render(<DrawerWithInfo />);
+
+    expect(
+      screen.queryByText('Site finance workspace — spend, utilities, invoices.'),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'More info' }));
+
+    expect(
+      screen.getByText('Site finance workspace — spend, utilities, invoices.'),
+    ).toBeInTheDocument();
   });
 });

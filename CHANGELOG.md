@@ -2,7 +2,23 @@
 
 ## Unreleased
 
-## 0.0.23 — pending publication
+## 0.0.24 — 2026-10-31
+
+### Fixed
+
+- **`Select`** — let the dropdown dismiss options so rapid pointer reopening after a choice works consistently.
+- **`FormDrawer` `info`** — **click Popover** (not hover Tooltip). Hover tips race with drawer slide-under-cursor and cannot be made reliable there.
+- **`Tooltip`** — hover-only; blocks Radix focus/pointermove opens; arms only after leave or a post-layout move while `elementFromPoint` is outside the trigger.
+
+### Changed
+
+- **`LabeledSelect`** — default `layout="stacked"` (label above the field). Use `layout="inline"` only for dense toolbars.
+
+### Added
+
+- **`UploadDropzone` multi-file** — `multiple` + `File[]` value/onChange, per-file remove, and `accept` / `onInvalidFile` rejection for file variant.
+
+## 0.0.23 — 2026-10-23
 
 ### Added
 

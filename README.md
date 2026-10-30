@@ -135,4 +135,6 @@ Publishing is automated when you [create a GitHub Release](https://github.com/yc
 2. Commit and push to `main`
 3. Tag `vX.Y.Z` and publish the release
 
-CI runs build, lint, tests, then publishes to npm with `NPM_TOKEN`.
+CI runs build, lint, types, and tests before publishing to npm with the
+repository's renewed `NPM_TOKEN` secret and provenance. Verify the public
+registry version before updating any template or app consumer.

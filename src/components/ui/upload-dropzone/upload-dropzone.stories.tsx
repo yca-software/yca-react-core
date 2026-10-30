@@ -34,3 +34,24 @@ export const Default: Story = {
     );
   },
 };
+
+export const MultiplePdfs: Story = {
+  render: () => {
+    const [files, setFiles] = useState<File[]>([]);
+    return (
+      <UploadDropzone
+        variant="file"
+        multiple
+        value={files}
+        onChange={setFiles}
+        accept="application/pdf,.pdf"
+        className="w-96"
+        translations={{
+          dropHintText: 'Drag and drop PDF invoices here, or choose files.',
+          chooseFileText: 'Choose PDFs',
+          removeText: 'Clear all',
+        }}
+      />
+    );
+  },
+};
