@@ -96,6 +96,7 @@ function Select({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
+        animated={false}
         align="start"
         sideOffset={0}
         portalled={!insideModalScrollLock}

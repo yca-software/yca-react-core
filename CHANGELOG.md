@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.0.25 — pending publication
+
+### Fixed
+
+- **`Select`** — remove the closing animation so a rapid pointer click can reopen the menu after an option is chosen. The outgoing dropdown layer otherwise dismisses the new open request in Chromium.
+
 ## 0.0.24 — 2026-10-31
 
 ### Fixed
